@@ -260,7 +260,6 @@ const clauseSeeds: ClauseSeed[] = [
     number: '52.202-1',
     title: 'Definitions',
     prescription:
-      '1.102-3 Evaluating agency acquisition processes.\n\n' +
       '(a) Agencies are encouraged to develop internal procedures seeking voluntary feedback from interested parties in an acquisition to assess process strengths and weaknesses and improve effectiveness and efficiency of the acquisition process. Agencies may—\n\n' +
       '(1) Utilize a variety of feedback mechanisms available to the public (e.g., surveys, in-person, and/or group exchanges);\n\n' +
       '(2) Utilize the core preaward and debriefing survey questions at https://www.acquisition.gov/360; and\n\n' +

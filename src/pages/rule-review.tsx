@@ -22,7 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
-import EditConditionsDialog from '../components/edit-conditions-dialog'
+import EditConditionsForm from '../components/edit-conditions-form'
 import {
   getReviewQueue,
   getRuleReview,
@@ -36,7 +36,7 @@ import {
   type ConditionJoin,
   type ReviewClause,
 } from '../db/rule-reviews'
-import type { RuleApproval, RuleApprovalStatus } from '../db/rule-approvals'
+import { updateRuleApproval, type RuleApproval, type RuleApprovalStatus } from '../db/rule-approvals'
 
 const navPages = [
   { label: 'Clause Sets', icon: LayoutGrid },
@@ -184,6 +184,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [confirmingReject, setConfirmingReject] = useState(false)
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
+  const [nameInput, setNameInput] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -203,6 +204,8 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
       setReview(copy)
       setDirty(false)
       setSavedAt(stored.draftSavedAt)
+      const foundRule = rules.find(r => r.id === ruleId)
+      if (foundRule) setNameInput(foundRule.name)
       const included = copy.clauses.filter(c => c.outcome === 'Included')
       const excluded = copy.clauses.filter(c => c.outcome === 'Excluded')
       setSelectedClauseId([...included, ...excluded][0]?.id ?? null)
@@ -246,15 +249,27 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
   /* --------------------------------- actions --------------------------------- */
 
-  const handleApplyConditions = (content: RuleReviewContent) => {
+  const handleContentChange = (content: RuleReviewContent) => {
     setReview(prev => (prev ? { ...prev, ...content } : prev))
     setDirty(true)
-    setEditingConditions(false)
+  }
+
+  const handleNameChange = (next: string) => {
+    setNameInput(next)
+    setDirty(true)
+  }
+
+  /** Persist a name change, if any, so the Rules list and header stay in sync. */
+  const persistNameIfChanged = async () => {
+    if (!rule || nameInput === rule.name) return
+    await updateRuleApproval(ruleId, { name: nameInput })
+    setQueue(await getReviewQueue())
   }
 
   const handleSaveDraft = async () => {
     if (!review) return
     setBusy(true)
+    await persistNameIfChanged()
     const saved = await saveRuleReviewDraft(ruleId, toContent(review))
     setSavedAt(saved?.draftSavedAt ?? null)
     setDirty(false)
@@ -264,6 +279,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const handleDecision = async (decision: 'accept' | 'reject') => {
     if (!review || locked) return
     setBusy(true)
+    await persistNameIfChanged()
     const content = toContent(review)
     if (decision === 'accept') await acceptRuleReview(ruleId, content)
     else await rejectRuleReview(ruleId, content)
@@ -454,14 +470,14 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
               <div className="min-w-0">
                 <HeadingField
-                  text={rule.name}
+                  text={nameInput || rule.name}
                   size="MEDIUM_PLUS"
                   headingTag="H2"
                   fontWeight="SEMI_BOLD"
                   marginBelow="EVEN_LESS"
                 />
                 <p className="text-sm text-gray-600">
-                  {pluralize(conditionTotal, 'condition')} ·{' '}
+                  Custom rule · {pluralize(conditionTotal, 'condition')} ·{' '}
                   {pluralize(review.groups.length, 'group')}
                 </p>
               </div>
@@ -470,17 +486,28 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                 aria-label="Rule view"
                 className="inline-flex shrink-0 overflow-hidden rounded border border-gray-300 text-xs font-semibold uppercase"
               >
-                <span
-                  aria-current="true"
-                  className="inline-flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 text-blue-800"
+                <button
+                  type="button"
+                  aria-current={!editingConditions ? 'true' : undefined}
+                  onClick={() => setEditingConditions(false)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${
+                    !editingConditions
+                      ? 'bg-blue-50 text-blue-800'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   <Eye size={14} aria-hidden="true" /> Preview
-                </span>
+                </button>
                 {!locked && (
                   <button
                     type="button"
+                    aria-current={editingConditions ? 'true' : undefined}
                     onClick={() => setEditingConditions(true)}
-                    className="inline-flex items-center gap-1.5 border-l border-gray-300 bg-white px-3 py-1.5 font-semibold uppercase text-gray-700 hover:bg-gray-50"
+                    className={`inline-flex items-center gap-1.5 border-l border-gray-300 px-3 py-1.5 ${
+                      editingConditions
+                        ? 'bg-blue-50 text-blue-800'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <Pencil size={14} aria-hidden="true" /> Edit
                   </button>
@@ -488,42 +515,55 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               </div>
             </div>
 
-            <div className="px-5 py-4">
-              <HeadingField
-                text="Conditions"
-                size="MEDIUM_PLUS"
-                headingTag="H3"
-                fontWeight="SEMI_BOLD"
-                marginBelow="EVEN_LESS"
+            {editingConditions ? (
+              <EditConditionsForm
+                name={nameInput}
+                onNameChange={handleNameChange}
+                content={toContent(review)}
+                onChange={handleContentChange}
               />
-              <p className="mb-4 text-xs text-gray-600">Clause set data that triggers this rule</p>
-
-              {conditionTotal === 0 && (
-                <p className="text-sm text-gray-700">
-                  This rule has no conditions, so it applies to every clause set.
+            ) : (
+              <div className="px-5 py-4">
+                <HeadingField
+                  text="Conditions"
+                  size="MEDIUM_PLUS"
+                  headingTag="H3"
+                  fontWeight="SEMI_BOLD"
+                  marginBelow="EVEN_LESS"
+                />
+                <p className="mb-4 text-xs text-gray-600">
+                  Clause set data that triggers this rule
                 </p>
-              )}
 
-              <div className="space-y-4">
-                {review.conditions.length > 0 && (
-                  <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                    <ConditionStack conditions={review.conditions} join={review.join} />
-                  </div>
+                {conditionTotal === 0 && (
+                  <p className="text-sm text-gray-700">
+                    This rule has no conditions, so it applies to every clause set.
+                  </p>
                 )}
 
-                {review.groups.map((group, groupIndex) => (
-                  <div key={group.id}>
-                    {(review.conditions.length > 0 || groupIndex > 0) && (
-                      <p className="pb-2 text-xs font-semibold text-gray-600">{review.join}</p>
-                    )}
+                <div className="space-y-4">
+                  {review.conditions.length > 0 && (
                     <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                      <p className="mb-3 text-xs text-gray-700">Condition Group {groupIndex + 1}</p>
-                      <ConditionStack conditions={group.conditions} join={group.join} />
+                      <ConditionStack conditions={review.conditions} join={review.join} />
                     </div>
-                  </div>
-                ))}
+                  )}
+
+                  {review.groups.map((group, groupIndex) => (
+                    <div key={group.id}>
+                      {(review.conditions.length > 0 || groupIndex > 0) && (
+                        <p className="pb-2 text-xs font-semibold text-gray-600">{review.join}</p>
+                      )}
+                      <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                        <p className="mb-3 text-xs text-gray-700">
+                          Condition Group {groupIndex + 1}
+                        </p>
+                        <ConditionStack conditions={group.conditions} join={group.join} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Included and excluded clauses, one row each */}
@@ -694,14 +734,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             />
           </div>
         </DialogField>
-      )}
-
-      {editingConditions && (
-        <EditConditionsDialog
-          content={toContent(review)}
-          onClose={() => setEditingConditions(false)}
-          onApply={handleApplyConditions}
-        />
       )}
 
       {viewingClauseId !== null &&

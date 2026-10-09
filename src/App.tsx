@@ -13,6 +13,12 @@ import ValidateClauseSetEmpty from './pages/validate-clause-set-empty'
 import AiClauseSelection from './pages/ai-clause-selection'
 import AddSuggestedClauses from './pages/add-suggested-clauses'
 import Rules from './pages/rules'
+import RulesReview from './pages/rules-review'
+import RuleReviewPage, { PendingRuleReviewPage } from './pages/rule-review'
+import QuestionsLanding from './pages/questions-landing'
+import Questions from './pages/questions'
+import QuestionsReview from './pages/questions-review'
+import ClauseHistory from './pages/clause-history'
 
 const pages = [
   { path: '/', title: 'Kanban Board', component: KanbanBoard },
@@ -26,6 +32,13 @@ const pages = [
   { path: '/ai-clause-selection', title: 'AI Clause Selection', component: AiClauseSelection },
   { path: '/add-suggested-clauses', title: 'Add Suggested Clauses', component: AddSuggestedClauses },
   { path: '/rules', title: 'Rules', component: Rules },
+  { path: '/rules-review', title: 'Rules (Approval Status)', component: RulesReview },
+  { path: '/rules-review/pending/:id', title: 'Pending Rule Review', component: PendingRuleReviewPage },
+  { path: '/rules-review/:id', title: 'Rule Review', component: RuleReviewPage },
+  { path: '/questions-landing', title: 'Questions Landing', component: QuestionsLanding },
+  { path: '/questions', title: 'Questions', component: Questions },
+  { path: '/questions-review', title: 'Review System Questions', component: QuestionsReview },
+  { path: '/clause-history', title: 'Clause History', component: ClauseHistory },
 ]
 
 function App() {

@@ -20,6 +20,7 @@ export const mockUsers: MockUser[] = [
   { username: 'bob.martinez', displayName: 'Bob Martinez', initials: 'BM' },
   { username: 'carol.white', displayName: 'Carol White', initials: 'CW' },
   { username: 'david.kim', displayName: 'David Kim', initials: 'DK' },
+  { username: 'privilege.user', displayName: 'Privilege User', initials: 'PU' },
 ]
 
 /** Look up a display name from a username */

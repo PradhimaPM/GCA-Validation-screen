@@ -1,0 +1,7 @@
+node_modules
+dist
+.git
+.kiro
+.env*
+.vercel
+arun-GCA-Validation

@@ -15,6 +15,12 @@ export default function Home() {
     { title: 'AI Clause Selection', path: '/ai-clause-selection', description: 'Enter contract details, upload SOW, and let AI suggest clauses with confidence tiers' },
     { title: 'Add Suggested Clauses', path: '/add-suggested-clauses', description: 'Two-panel picker to select suggested clauses and stage them for addition to a clause set' },
     { title: 'Rules', path: '/rules', description: 'Searchable, sortable list of conditional rules that include or exclude clauses, with site navigation' },
+    { title: 'Rules (Approval Status)', path: '/rules-review', description: 'Rules list with clickable rule names, Approved / Rejected / Pending status tags, and a row menu with Edit Rule and View Rule History' },
+    { title: 'Rule Review', path: '/rules-review/1', description: 'Internal review of one OOTB rule: shared conditions and questions, per-clause prescription and clause text, Save draft, and Accept & next rule' },
+    { title: 'Questions Landing', path: '/questions-landing', description: 'First-time landing page for the Questions tab with options to import system questions or import manually from a spreadsheet' },
+    { title: 'Questions', path: '/questions', description: 'Searchable, sortable list of approved questions with response type, last modified, and status tags' },
+    { title: 'Review System Questions', path: '/questions-review', description: 'Review imported system questions and approve or reject them before they appear in the Questions tab' },
+    { title: 'Clause History', path: '/clause-history', description: 'Change log for a clause with user, modification and time, and a Show Changes pop-up that compares original and edited clause text' },
   ]
 
   return (

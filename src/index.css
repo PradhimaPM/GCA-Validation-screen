@@ -1,3 +1,45 @@
 @import "tailwindcss";
 @import "@pglevy/sailwind/theme.css";
 @source "../node_modules/@pglevy/sailwind/dist";
+
+/*
+ * DialogField only offers fixed widths (up to 95vw) and no way to size the
+ * dialog from the page. Dialogs that need a specific size put the
+ * .dialog-size-75 class on their content; this makes the dialog 75% of the screen.
+ */
+[role="dialog"]:has(.dialog-size-75) {
+  width: 75vw;
+  max-width: 75vw;
+  height: 75vh;
+  max-height: 75vh;
+}
+
+[role="dialog"]:has(.dialog-size-60) {
+  width: 60vw;
+  max-width: 60vw;
+  height: 70vh;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/*
+ * DialogField's second direct child is the children wrapper. Giving it
+ * flex: 1 with min-height: 0 bounds its height so its own overflow-y-auto
+ * actually scrolls instead of pushing the content past the dialog's frame.
+ */
+[role="dialog"]:has(.dialog-size-60) > div:last-child {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/*
+ * Sortable grid headers render their label inside a flex <button>, which
+ * shrinks to fit and ignores the column's text-right. Push it to the right
+ * edge so right-aligned columns get a right-aligned title.
+ */
+th.text-right > button {
+  margin-left: auto;
+}

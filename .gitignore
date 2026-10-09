@@ -27,3 +27,8 @@ dist-ssr
 
 # Generated Appian app artifacts
 appian-output/
+.vercel
+.env*
+
+# Nested sibling repo kept locally — not part of this project
+arun-GCA-Validation/

@@ -477,7 +477,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   marginBelow="EVEN_LESS"
                 />
                 <p className="text-sm text-gray-600">
-                  Custom rule · {pluralize(conditionTotal, 'condition')} ·{' '}
+                  {pluralize(conditionTotal, 'condition')} ·{' '}
                   {pluralize(review.groups.length, 'group')}
                 </p>
               </div>

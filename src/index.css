@@ -36,10 +36,11 @@
 }
 
 /*
- * Sortable grid headers render their label inside a flex <button>, which
- * shrinks to fit and ignores the column's text-right. Push it to the right
- * edge so right-aligned columns get a right-aligned title.
+ * Sortable grid headers render their label inside a block-level flex
+ * <button>, which stretches across the cell and ignores the column's
+ * text-right. Switch it to inline-flex so the th's text-align: right can
+ * push it (and the sort arrow with it) to the right edge.
  */
 th.text-right > button {
-  margin-left: auto;
+  display: inline-flex;
 }

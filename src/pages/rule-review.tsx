@@ -170,8 +170,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const params = useParams<{ id: string }>()
   const ruleId = Number(params.id)
   const [, setLocation] = useLocation()
-  /** Pending-only review keeps its own URLs so Accept/Reject stays within pending rules. */
-  const basePath = pendingOnly ? '/rules-review/pending' : '/rules-review'
 
   const [queue, setQueue] = useState<RuleApproval[]>([])
   const [review, setReview] = useState<RuleReview | null>(null)
@@ -219,7 +217,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const rule = queue.find(r => r.id === ruleId)
   /** Approved and Rejected rules are final: no editing, saving, or deciding again. */
   const locked = rule !== undefined && rule.status !== 'Pending'
-  const nextPendingRule = queue.find(r => r.status === 'Pending' && r.id !== ruleId)
 
   const includedClauses = review?.clauses.filter(c => c.outcome === 'Included') ?? []
   const excludedClauses = review?.clauses.filter(c => c.outcome === 'Excluded') ?? []
@@ -236,11 +233,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   /* -------------------------------- navigation ------------------------------- */
 
   const confirmLeave = () => !dirty || window.confirm(UNSAVED_CONFIRM)
-
-  const goToRule = (id: number) => {
-    if (id === ruleId || !confirmLeave()) return
-    setLocation(`${basePath}/${id}`)
-  }
 
   const goToList = () => {
     if (!confirmLeave()) return
@@ -436,31 +428,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
           </div>
         </div>
       </div>
-
-      {locked && (
-        <div className="shrink-0 px-8 pt-4">
-          <MessageBanner
-            primaryText={`This rule has been ${rule.status.toLowerCase()}`}
-            secondaryText="It can't be edited or reviewed again."
-            backgroundColor={rule.status === 'Approved' ? 'SUCCESS' : 'ERROR'}
-            highlightColor={rule.status === 'Approved' ? 'POSITIVE' : 'NEGATIVE'}
-            icon={rule.status === 'Approved' ? 'success' : 'error'}
-            buttons={
-              nextPendingRule
-                ? [
-                    {
-                      label: 'Go to next pending rule',
-                      style: 'OUTLINE',
-                      color: 'ACCENT',
-                      onClick: () => goToRule(nextPendingRule.id),
-                    },
-                  ]
-                : undefined
-            }
-            marginBelow="NONE"
-          />
-        </div>
-      )}
 
       {/* Two panes, each scrolling on its own */}
       <div className="flex min-h-0 flex-1">

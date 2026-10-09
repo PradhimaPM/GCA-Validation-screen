@@ -19,10 +19,7 @@ import {
   Layers,
   CircleHelp,
   Shuffle,
-  Zap,
-  LayoutList,
 } from 'lucide-react'
-import RowActionsMenu from '../components/row-actions-menu'
 import {
   getRuleApprovals,
   formatRuleApprovalConditions,
@@ -257,29 +254,6 @@ export default function RulesReview() {
                     align="RIGHT"
                     preventWrapping={true}
                     marginBelow="NONE"
-                  />
-                )}
-              />
-              <GridColumn
-                label=""
-                width="ICON"
-                align="CENTER"
-                value={(row: RuleApproval) => (
-                  <RowActionsMenu
-                    triggerLabel={`Actions for ${row.name}`}
-                    items={[
-                      {
-                        label: row.status === 'Pending' ? 'Edit Rule' : 'View Rule',
-                        icon: Zap,
-                        onSelect: () => setLocation(`/rules-review/${row.id}`),
-                      },
-                      {
-                        label: 'View Rule History',
-                        icon: LayoutList,
-                        onSelect: () =>
-                          alert(`View Rule History for "${row.name}" is not wired up yet.`),
-                      },
-                    ]}
                   />
                 )}
               />

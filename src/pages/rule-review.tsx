@@ -567,7 +567,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
           {selectedClause ? (
             <div className="space-y-4">
               <HeadingField
-                text={selectedClause.number}
+                text={`${selectedClause.number} ${selectedClause.title}`}
                 size="MEDIUM"
                 headingTag="H2"
                 fontWeight="SEMI_BOLD"

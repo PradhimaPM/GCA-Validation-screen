@@ -29,6 +29,7 @@ import {
   saveRuleReviewDraft,
   acceptRuleReview,
   rejectRuleReview,
+  revertRuleReview,
   countConditions,
   type RuleReview,
   type RuleReviewContent,
@@ -215,8 +216,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   }, [ruleId])
 
   const rule = queue.find(r => r.id === ruleId)
-  /** Approved and Rejected rules are final: no editing, saving, or deciding again. */
-  const locked = rule !== undefined && rule.status !== 'Pending'
 
   const includedClauses = review?.clauses.filter(c => c.outcome === 'Included') ?? []
   const excludedClauses = review?.clauses.filter(c => c.outcome === 'Excluded') ?? []
@@ -269,7 +268,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   }
 
   const handleDecision = async (decision: 'accept' | 'reject') => {
-    if (!review || locked) return
+    if (!review) return
     setBusy(true)
     await persistNameIfChanged()
     const content = toContent(review)
@@ -279,6 +278,18 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     setBusy(false)
     // Return to the Rules list; the reviewer picks the next rule to open.
     setLocation('/rules-review')
+  }
+
+  const handleRevert = async () => {
+    if (!review) return
+    setBusy(true)
+    await persistNameIfChanged()
+    await revertRuleReview(ruleId, toContent(review))
+    // Refresh queue so the status tag at the top reflects Pending.
+    setQueue(await getReviewQueue())
+    setDirty(false)
+    setSavedAt(null)
+    setBusy(false)
   }
 
   /* ---------------------------------- render --------------------------------- */
@@ -465,20 +476,18 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                 >
                   <Eye size={14} aria-hidden="true" /> Preview
                 </button>
-                {!locked && (
-                  <button
-                    type="button"
-                    aria-current={editingConditions ? 'true' : undefined}
-                    onClick={() => setEditingConditions(true)}
-                    className={`inline-flex items-center gap-1.5 border-l border-gray-300 px-3 py-1.5 ${
-                      editingConditions
-                        ? 'bg-blue-50 text-blue-800'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Pencil size={14} aria-hidden="true" /> Edit
-                  </button>
-                )}
+                <button
+                  type="button"
+                  aria-current={editingConditions ? 'true' : undefined}
+                  onClick={() => setEditingConditions(true)}
+                  className={`inline-flex items-center gap-1.5 border-l border-gray-300 px-3 py-1.5 ${
+                    editingConditions
+                      ? 'bg-blue-50 text-blue-800'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Pencil size={14} aria-hidden="true" /> Edit
+                </button>
               </div>
             </div>
 
@@ -629,43 +638,53 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         </section>
       </div>
 
-      {/* Footer actions (hidden once a rule is approved or rejected) */}
-      {!locked && (
-        <div className="flex shrink-0 items-center justify-between gap-4 border-t border-gray-200 bg-white px-8 py-3">
-          <div className="flex items-center gap-4">
+      {/* Footer actions — always visible so every rule can be edited and saved. */}
+      <div className="flex shrink-0 items-center justify-between gap-4 border-t border-gray-200 bg-white px-8 py-3">
+        <div className="flex items-center gap-4">
+          <ButtonWidget
+            label="Save Draft"
+            style="OUTLINE"
+            color="ACCENT"
+            disabled={busy || !dirty}
+            onClick={handleSaveDraft}
+          />
+          <span
+            className={`text-sm ${dirty ? 'text-amber-700' : 'text-gray-600'}`}
+            role="status"
+            aria-live="polite"
+          >
+            {statusMessage}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {rule.status === 'Pending' ? (
+            <>
+              <ButtonWidget
+                label="Reject"
+                style="OUTLINE"
+                color="NEGATIVE"
+                disabled={busy}
+                onClick={() => setConfirmingReject(true)}
+              />
+              <ButtonWidget
+                label="Accept"
+                style="SOLID"
+                color="ACCENT"
+                disabled={busy}
+                onClick={() => handleDecision('accept')}
+              />
+            </>
+          ) : (
             <ButtonWidget
-              label="Save Draft"
-              style="OUTLINE"
-              color="ACCENT"
-              disabled={busy || !dirty}
-              onClick={handleSaveDraft}
-            />
-            <span
-              className={`text-sm ${dirty ? 'text-amber-700' : 'text-gray-600'}`}
-              role="status"
-              aria-live="polite"
-            >
-              {statusMessage}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <ButtonWidget
-              label="Reject"
-              style="OUTLINE"
-              color="NEGATIVE"
-              disabled={busy}
-              onClick={() => setConfirmingReject(true)}
-            />
-            <ButtonWidget
-              label="Accept"
+              label="Revert to Pending"
               style="SOLID"
               color="ACCENT"
               disabled={busy}
-              onClick={() => handleDecision('accept')}
+              onClick={handleRevert}
             />
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {confirmingReject && (
         <DialogField

@@ -19,6 +19,7 @@ import {
   getRuleApproval,
   updateRuleApproval,
   type RuleApproval,
+  type RuleApprovalStatus,
 } from './rule-approvals'
 
 export type ClauseDataType =
@@ -584,34 +585,29 @@ export async function updateRuleReview(
   return updated
 }
 
-/** Only Pending rules can be reviewed. Approved and Rejected rules are locked. */
-async function isPending(ruleId: number): Promise<boolean> {
-  return (await getRuleApproval(ruleId))?.status === 'Pending'
-}
-
 /**
- * Stores the reviewer's edits without changing the rule's status. Returns
- * undefined, and stores nothing, if the rule is no longer Pending.
+ * Stores the reviewer's edits without changing the rule's status. Works for
+ * rules in any status (Pending / Approved / Rejected) so reviewers can tweak
+ * a rule's content after a decision has already been made.
  */
 export async function saveRuleReviewDraft(
   ruleId: number,
   content: RuleReviewContent,
 ): Promise<RuleReview | undefined> {
-  if (!(await isPending(ruleId))) return undefined
   return updateRuleReview(ruleId, { ...content, draftSavedAt: new Date().toISOString() })
 }
 
 /**
- * Stores the reviewer's edits and sets the rule's final status. `lastUpdated` is
+ * Stores the reviewer's edits and sets the rule's status. `lastUpdated` is
  * left alone so the review queue keeps its order while the reviewer works
- * through it. Returns undefined, and changes nothing, if the rule is no longer Pending.
+ * through it. Accepts transitions from any status, which lets a reviewer
+ * revert a decision (back to Pending) or re-decide after reverting.
  */
 async function decideRuleReview(
   ruleId: number,
   content: RuleReviewContent,
-  status: 'Approved' | 'Rejected',
+  status: RuleApprovalStatus,
 ): Promise<RuleReview | undefined> {
-  if (!(await isPending(ruleId))) return undefined
   const updated = await updateRuleReview(ruleId, { ...content, draftSavedAt: null })
   if (!updated) return undefined
   await updateRuleApproval(ruleId, { status })
@@ -630,6 +626,14 @@ export async function rejectRuleReview(
   content: RuleReviewContent,
 ): Promise<RuleReview | undefined> {
   return decideRuleReview(ruleId, content, 'Rejected')
+}
+
+/** Reverts an Approved or Rejected rule back to Pending. */
+export async function revertRuleReview(
+  ruleId: number,
+  content: RuleReviewContent,
+): Promise<RuleReview | undefined> {
+  return decideRuleReview(ruleId, content, 'Pending')
 }
 
 export function countConditions(review: Pick<RuleReviewContent, 'conditions' | 'groups'>): number {

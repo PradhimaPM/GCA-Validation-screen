@@ -628,13 +628,7 @@ export async function rejectRuleReview(
   return decideRuleReview(ruleId, content, 'Rejected')
 }
 
-/** Reverts an Approved or Rejected rule back to Pending. */
-export async function revertRuleReview(
-  ruleId: number,
-  content: RuleReviewContent,
-): Promise<RuleReview | undefined> {
-  return decideRuleReview(ruleId, content, 'Pending')
-}
+
 
 export function countConditions(review: Pick<RuleReviewContent, 'conditions' | 'groups'>): number {
   return review.conditions.length + review.groups.reduce((sum, g) => sum + g.conditions.length, 0)

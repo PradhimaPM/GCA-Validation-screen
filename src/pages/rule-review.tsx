@@ -29,7 +29,6 @@ import {
   saveRuleReviewDraft,
   acceptRuleReview,
   rejectRuleReview,
-  revertRuleReview,
   countConditions,
   type RuleReview,
   type RuleReviewContent,
@@ -181,6 +180,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const [editingConditions, setEditingConditions] = useState(false)
   const [confirmingReject, setConfirmingReject] = useState(false)
+  const [confirmingDecisionChange, setConfirmingDecisionChange] = useState(false)
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
   const [nameInput, setNameInput] = useState('')
@@ -280,16 +280,26 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     setLocation('/rules-review')
   }
 
-  const handleRevert = async () => {
-    if (!review) return
+  /**
+   * Flip an Approved rule to Rejected (or vice versa). Called from the top-bar
+   * Change Decision button after the reviewer confirms.
+   */
+  const handleChangeDecision = async () => {
+    if (!review || !rule || rule.status === 'Pending') return
     setBusy(true)
     await persistNameIfChanged()
-    await revertRuleReview(ruleId, toContent(review))
-    // Refresh queue so the status tag at the top reflects Pending.
+    const content = toContent(review)
+    if (rule.status === 'Approved') {
+      await rejectRuleReview(ruleId, content)
+    } else {
+      await acceptRuleReview(ruleId, content)
+    }
+    // Refresh queue so the status tag reflects the new decision.
     setQueue(await getReviewQueue())
     setDirty(false)
     setSavedAt(null)
     setBusy(false)
+    setConfirmingDecisionChange(false)
   }
 
   /* ---------------------------------- render --------------------------------- */
@@ -392,51 +402,65 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     <>
       {/* Page header */}
       <div className="shrink-0 border-b border-gray-200 bg-white px-8 py-4">
-        <div className="flex items-start gap-3">
-          <div className="-ml-2 mt-0.5">
-            <ButtonWidget
-              style="GHOST"
-              color="SECONDARY"
-              size="SMALL"
-              icon="ChevronLeft"
-              tooltip="Back to Rules"
-              accessibilityText="Back to Rules"
-              onClick={goToList}
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <HeadingField
-                text="Review Rule"
-                size="LARGE"
-                headingTag="H1"
-                fontWeight="REGULAR"
-                marginBelow="NONE"
-              />
-              <TagField
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="-ml-2 mt-0.5">
+              <ButtonWidget
+                style="GHOST"
+                color="SECONDARY"
                 size="SMALL"
-                tags={[
-                  {
-                    text: rule.status,
-                    backgroundColor: statusTagColors[rule.status].background,
-                    textColor: statusTagColors[rule.status].text,
-                  },
+                icon="ChevronLeft"
+                tooltip="Back to Rules"
+                accessibilityText="Back to Rules"
+                onClick={goToList}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <HeadingField
+                  text="Review Rule"
+                  size="LARGE"
+                  headingTag="H1"
+                  fontWeight="REGULAR"
+                  marginBelow="NONE"
+                />
+                <TagField
+                  size="SMALL"
+                  tags={[
+                    {
+                      text: rule.status,
+                      backgroundColor: statusTagColors[rule.status].background,
+                      textColor: statusTagColors[rule.status].text,
+                    },
+                  ]}
+                  marginBelow="NONE"
+                />
+              </div>
+              <RichTextDisplayField
+                value={[
+                  <TextItem
+                    key="subtitle"
+                    text="Review the rule and accept it to add to the library"
+                    color="SECONDARY"
+                    size="STANDARD"
+                  />,
                 ]}
                 marginBelow="NONE"
               />
             </div>
-            <RichTextDisplayField
-              value={[
-                <TextItem
-                  key="subtitle"
-                  text="Review the rule and accept it to add to the library"
-                  color="SECONDARY"
-                  size="STANDARD"
-                />,
-              ]}
-              marginBelow="NONE"
-            />
           </div>
+          {rule.status !== 'Pending' && (
+            <div className="shrink-0 pt-1">
+              <ButtonWidget
+                label="Change Decision"
+                style="OUTLINE"
+                color="ACCENT"
+                icon="RefreshCw"
+                iconPosition="START"
+                onClick={() => setConfirmingDecisionChange(true)}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -656,34 +680,24 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             {statusMessage}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          {rule.status === 'Pending' ? (
-            <>
-              <ButtonWidget
-                label="Reject"
-                style="OUTLINE"
-                color="NEGATIVE"
-                disabled={busy}
-                onClick={() => setConfirmingReject(true)}
-              />
-              <ButtonWidget
-                label="Accept"
-                style="SOLID"
-                color="ACCENT"
-                disabled={busy}
-                onClick={() => handleDecision('accept')}
-              />
-            </>
-          ) : (
+        {rule.status === 'Pending' && (
+          <div className="flex items-center gap-3">
             <ButtonWidget
-              label="Revert to Pending"
+              label="Reject"
+              style="OUTLINE"
+              color="NEGATIVE"
+              disabled={busy}
+              onClick={() => setConfirmingReject(true)}
+            />
+            <ButtonWidget
+              label="Accept"
               style="SOLID"
               color="ACCENT"
               disabled={busy}
-              onClick={handleRevert}
+              onClick={() => handleDecision('accept')}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {confirmingReject && (
@@ -717,6 +731,40 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                 setConfirmingReject(false)
                 await handleDecision('reject')
               }}
+            />
+          </div>
+        </DialogField>
+      )}
+
+      {confirmingDecisionChange && rule.status !== 'Pending' && (
+        <DialogField
+          open={true}
+          onOpenChange={open => {
+            if (!open) setConfirmingDecisionChange(false)
+          }}
+          title="Change decision?"
+          width="MEDIUM"
+          height="FIT"
+          closeOnOutsideClick={false}
+          marginBelow="NONE"
+        >
+          <p className="text-base text-gray-700">
+            This rule was previously {rule.status.toLowerCase()}. Would you like to{' '}
+            {rule.status === 'Approved' ? 'reject' : 'accept'} it instead?
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <ButtonWidget
+              label="CANCEL"
+              style="OUTLINE"
+              color="ACCENT"
+              onClick={() => setConfirmingDecisionChange(false)}
+            />
+            <ButtonWidget
+              label={rule.status === 'Approved' ? 'REJECT' : 'ACCEPT'}
+              style="SOLID"
+              color={rule.status === 'Approved' ? 'NEGATIVE' : 'ACCENT'}
+              disabled={busy}
+              onClick={handleChangeDecision}
             />
           </div>
         </DialogField>

@@ -618,7 +618,7 @@ export async function acceptRuleReview(
   ruleId: number,
   content: RuleReviewContent,
 ): Promise<RuleReview | undefined> {
-  return decideRuleReview(ruleId, content, 'Approved')
+  return decideRuleReview(ruleId, content, 'Accepted')
 }
 
 export async function rejectRuleReview(

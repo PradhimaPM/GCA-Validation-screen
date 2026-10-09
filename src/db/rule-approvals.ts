@@ -8,7 +8,7 @@
  */
 import { getRules } from './rules'
 
-export type RuleApprovalStatus = 'Approved' | 'Rejected' | 'Pending'
+export type RuleApprovalStatus = 'Accepted' | 'Rejected' | 'Pending'
 
 export interface RuleApproval {
   id: number
@@ -29,14 +29,14 @@ export interface RuleApproval {
 // Deterministic spread so every status shows up on the first page of the grid.
 const statusCycle: RuleApprovalStatus[] = [
   'Pending',
-  'Approved',
-  'Approved',
+  'Accepted',
+  'Accepted',
   'Rejected',
-  'Approved',
+  'Accepted',
   'Pending',
-  'Approved',
+  'Accepted',
   'Rejected',
-  'Approved',
+  'Accepted',
   'Pending',
 ]
 

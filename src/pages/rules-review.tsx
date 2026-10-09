@@ -36,10 +36,10 @@ const navPages = [
   { label: 'Rules', icon: Shuffle, isSelected: true },
 ]
 
-const statusChoices: RuleApprovalStatus[] = ['Approved', 'Rejected', 'Pending']
+const statusChoices: RuleApprovalStatus[] = ['Accepted', 'Rejected', 'Pending']
 
 const statusTagColors: Record<RuleApprovalStatus, { background: string; text: string }> = {
-  Approved: { background: '#D7F3E0', text: '#166534' },
+  Accepted: { background: '#D7F3E0', text: '#166534' },
   Rejected: { background: '#FDE2E2', text: '#991B1B' },
   Pending: { background: '#DBEAFE', text: '#1E40AF' },
 }

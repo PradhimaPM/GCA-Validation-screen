@@ -47,7 +47,7 @@ const navPages = [
 ]
 
 const statusTagColors: Record<RuleApprovalStatus, { background: string; text: string }> = {
-  Approved: { background: '#D7F3E0', text: '#166534' },
+  Accepted: { background: '#D7F3E0', text: '#166534' },
   Rejected: { background: '#FDE2E2', text: '#991B1B' },
   Pending: { background: '#DBEAFE', text: '#1E40AF' },
 }
@@ -281,7 +281,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   }
 
   /**
-   * Flip an Approved rule to Rejected (or vice versa). Called from the top-bar
+   * Flip an Accepted rule to Rejected (or vice versa). Called from the top-bar
    * Change Decision button after the reviewer confirms.
    */
   const handleChangeDecision = async () => {
@@ -289,7 +289,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     setBusy(true)
     await persistNameIfChanged()
     const content = toContent(review)
-    if (rule.status === 'Approved') {
+    if (rule.status === 'Accepted') {
       await rejectRuleReview(ruleId, content)
     } else {
       await acceptRuleReview(ruleId, content)
@@ -348,7 +348,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
   if (done) {
     const counts = {
-      Approved: queue.filter(r => r.status === 'Approved').length,
+      Accepted: queue.filter(r => r.status === 'Accepted').length,
       Rejected: queue.filter(r => r.status === 'Rejected').length,
       Pending: queue.filter(r => r.status === 'Pending').length,
     }
@@ -750,7 +750,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         >
           <p className="text-sm text-gray-600">
             This rule was previously {rule.status.toLowerCase()}. Would you like to{' '}
-            {rule.status === 'Approved' ? 'reject' : 'accept'} it instead?
+            {rule.status === 'Accepted' ? 'reject' : 'accept'} it instead?
           </p>
           <hr className="-mx-6 mt-6 border-gray-200" />
           <div className="mt-4 flex items-center justify-between gap-3">
@@ -761,9 +761,9 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               onClick={() => setConfirmingDecisionChange(false)}
             />
             <ButtonWidget
-              label={rule.status === 'Approved' ? 'REJECT' : 'ACCEPT'}
+              label={rule.status === 'Accepted' ? 'REJECT' : 'ACCEPT'}
               style="SOLID"
-              color={rule.status === 'Approved' ? 'NEGATIVE' : 'ACCENT'}
+              color={rule.status === 'Accepted' ? 'NEGATIVE' : 'ACCENT'}
               disabled={busy}
               onClick={handleChangeDecision}
             />
@@ -806,7 +806,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   )
 }
 
-/** Review any rule. Approved and Rejected rules open read-only. */
+/** Review any rule. Accepted and Rejected rules open with the Change Decision top bar. */
 export default function RuleReviewPage() {
   return <RuleReviewScreen pendingOnly={false} />
 }

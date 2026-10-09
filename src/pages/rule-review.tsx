@@ -748,23 +748,25 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
           closeOnOutsideClick={false}
           marginBelow="NONE"
         >
-          <hr className="-mx-6 -mt-2 border-gray-200" />
-          <p className="mt-4 text-base text-gray-700">
+          <p className="text-sm text-gray-600">
             This rule was previously {rule.status.toLowerCase()}. Would you like to{' '}
             {rule.status === 'Approved' ? 'reject' : 'accept'} it instead?
           </p>
-          <hr className="-mx-6 mt-6 border-gray-200" />
-          <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="mt-6 flex items-center justify-end gap-3">
             <ButtonWidget
               label="CANCEL"
               style="OUTLINE"
               color="ACCENT"
+              icon="X"
+              iconPosition="START"
               onClick={() => setConfirmingDecisionChange(false)}
             />
             <ButtonWidget
               label={rule.status === 'Approved' ? 'REJECT' : 'ACCEPT'}
               style="SOLID"
               color={rule.status === 'Approved' ? 'NEGATIVE' : 'ACCENT'}
+              icon="Check"
+              iconPosition="START"
               disabled={busy}
               onClick={handleChangeDecision}
             />
